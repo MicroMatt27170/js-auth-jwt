@@ -17,7 +17,7 @@ export class auth {
 
         this.serverUrl = serverUrl
         this.authUrl = authUrl
-        this.serviceKey = this.serviceKey
+        this.serviceKey = serviceKey
     }
 
     getUser() {
@@ -68,7 +68,7 @@ export class auth {
         }
     }
 
-    logout() {
+    async logout() {
         let accessToken = state.accessToken
 
         await axios.post(this.authUrl+'/api/auth/logout',
@@ -109,31 +109,62 @@ export class auth {
     }
 
     requestLogin() {
-        let _this = this
-
-        let containsLocalStorageJWT = function() {
-            const token = localStorage.getItem('jwt')
-            _this.setPayload(token)
-          
-            let ext = _this.token.expirationAt
-          
-              if (ext) {
-                ext = new Date(ext.getTime())
-                ext = ext.setMinutes(ext.getMinutes() - 15)
-                let today = new Date()
-                today = today.getTime()
-          
-                if (today > ext) {
-                  dispatch('refresh')
-                }
-          
-              } else {
-                dispatch('refresh')
-              }
+      let _this = this
+      let containsLocalStorageJWT = function() {
+        const token = localStorage.getItem('jwt')
+        _this.setPayload(token)
+      
+        let ext = _this.token.expirationAt
+      
+          if (ext) {
+            ext = new Date(ext.getTime())
+            ext = ext.setMinutes(ext.getMinutes() - 15)
+            let today = new Date()
+            today = today.getTime()
+      
+            if (today > ext) {
+              _this.refreshToken()
+            }
+      
+          } else {
+            _this.refreshToken()
           }
+      }
+
+      let containsAccessTokenQueryJWT = function () {
+        const routeQuery = new URLSearchParams(window.location.search)
+        if (!_this.isValidToken(routeQuery.get('access_token'))) {
+          if (localStorage.getItem('jwt')) {
+            containsLocalStorageJWT();
+          } else {
+            _this.redirectToAuthentication()
+          }
+        } else {
+          const token = routeQuery.get('access_token')
+          _this.setPayload(token)
+
+          _this.refreshToken()
+      
+          routeQuery.delete('access_token')
+          window.location.search = routeQuery.toString()
+        }
+      }
+
+      const routeQuery = new URLSearchParams(window.location.search)
+
+
+      if (routeQuery.get('access_token')) {
+        containsAccessTokenQueryJWT();
+      }
+      else if (localStorage.getItem('jwt')) {
+        containsLocalStorageJWT();
+      } else {
+        this.redirectToAuthentication()
+      }
+
     }
 
-    refreshToken() {
+    async refreshToken() {
         let accessToken = this.accessToken
 
         // make an API call using the refresh token to generate a new access token
