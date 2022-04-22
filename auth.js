@@ -1,7 +1,13 @@
  import axios from 'axios'
 
 export class auth {
+    isInit = false
+
     constructor(serverUrl, authUrl, serviceKey = null) {
+        this.initAuth(serverUrl, authUrl, serviceKey)
+    }
+
+    initAuth(serverUrl, authUrl, serviceKey = null) {
         this.accessToken = null
         this.token = {
             createdAt: null,
@@ -18,6 +24,8 @@ export class auth {
         this.serverUrl = serverUrl
         this.authUrl = authUrl
         this.serviceKey = serviceKey
+
+        this.isInit = true
     }
 
     getUser() {
