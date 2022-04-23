@@ -1,20 +1,22 @@
 import axios from "axios";
 import auth from "./auth";
 
-export default () => {
-    axios.defaults.headers.post["Content-Type"] = 'application/json'
-  
-  axios.interceptors.response.use(res => res, async (error) => {
+export default async (pluginAxios = null) => {
+    let pAxios = pluginAxios !== null ? pluginAxios : axios
+
+    pAxios.defaults.headers.post["Content-Type"] = 'application/json'
+
+    pAxios.interceptors.response.use(res => res, async (error) => {
   
     if (error.config && error.response && error.response.status === 401) {
-      auth.refreshToken()
+      await auth.refreshToken()
   
       error.config.headers.Authorization = 'Bearer ' + auth.accessToken
-      return axios.request(error.config)
+      return pAxios.request(error.config)
     }
   
     if (error.config && error.response && error.response.status === 403) {
-        auth.logout()
+        await auth.logout()
         auth.redirectToAuthentication()
     }
   
