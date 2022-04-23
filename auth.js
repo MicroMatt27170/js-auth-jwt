@@ -16,13 +16,17 @@ export class auth {
         }
         this.services = []
         this.actions = []
+        this.axiosInstance = axios.create({
+            withCredentials: true
+        })
     }
 
-    initAuth(serverUrl, authUrl, serviceKey = null) {
+    initAuth(serverUrl, authUrl, serviceKey = null, pAxios) {
         this.serverUrl = serverUrl
         this.authUrl = authUrl
         this.serviceKey = serviceKey
         this.isInit = true
+        this.axiosInstance = pAxios
     }
 
     getUser() {
@@ -66,17 +70,17 @@ export class auth {
 
         if (accessToken) {
           localStorage.setItem('jwt', accessToken)
-          axios.defaults.headers.common.Authorization = 'Bearer ' + accessToken
+          this.axiosInstance.defaults.headers.common.Authorization = 'Bearer ' + accessToken
         } else {
           localStorage.removeItem('jwt')
-          delete axios.defaults.headers.common.Authorization 
+          delete this.axiosInstance.defaults.headers.common.Authorization
         }
     }
 
     async logout() {
         let accessToken = state.accessToken
 
-        await axios.post(this.authUrl+'/api/auth/logout',
+        await this.axiosInstance.post(this.authUrl+'/api/auth/logout',
         { access_token: accessToken }).then(res => {
           // commit(AUTH_MUTATIONS.LOGOUT)
           localStorage.removeItem('jwt')
@@ -173,7 +177,7 @@ export class auth {
         let accessToken = this.accessToken
 
         // make an API call using the refresh token to generate a new access token
-        await axios.post(this.authUrl+'/api/auth/refresh',
+        await this.axiosInstance.post(this.authUrl+'/api/auth/refresh',
         { access_token: accessToken }).then(res => {
             this.setPayload(res.data.access_token,
                 res.data.created_at,
