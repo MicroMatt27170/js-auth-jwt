@@ -16,7 +16,7 @@ export default async (pluginAxios = null) => {
     }
   
     if (error.config && error.response && error.response.status === 403) {
-        await auth.logout()
+        localStorage.removeItem('jwt')
         auth.redirectToAuthentication()
     }
   
